@@ -1,20 +1,44 @@
 ---
-title: "Análisis de datos de COVID-19 en Costa Rica - gráficos básicos"
+title: "Análisis de datos de COVID-19 en Costa Rica - Gráficos del paquete base"
 author: "Manuel Vargas"
 date: "2022-05-07"
-output: html_document
+output:
+  html_document:
+    theme: readable    
+    toc: true
+    toc_depth: 5
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Carga de datos
-Los análisis presentados en este documento están basados en los datos publicados por el Ministerio de Salud de Costa Rica en [https://geovision.uned.ac.cr/oges/](https://geovision.uned.ac.cr/oges/).
+## Presentación
+Este documento presenta varios gráficos estadísticos de los datos de COVID-19 en Costa Rica publicados por el Ministerio de Salud en [https://geovision.uned.ac.cr/oges/](https://geovision.uned.ac.cr/oges/). Los gráficos han sido generados con funciones del paquete base del lenguaje de programación [R](https://www.r-project.org/).
+
+El código fuente de este documento está disponible en [https://github.com/gf0604-procesamientodatosgeograficos/2022-i-analisis-covid-basico/blob/main/index.Rmd](https://github.com/gf0604-procesamientodatosgeograficos/2022-i-analisis-covid-basico/blob/main/index.Rmd).
+
+## Entradas
+
+### Datos generales de casos
 
 ```{r carga-datos}
 covid <- read.csv("05_03_22_CSV_GENERAL.csv", sep = ";")
 ```
+
+## Procesamiento
+
+### Opciones generales
+Se utiliza notación científica solo si los números tienen más de siete dígitos.
+
+```{r opciones-generales}
+options(scipen = 7)
+```
+
+### Curación de datos
 
 Se convierte la variable `FECHA` al tipo `Date`.
 
@@ -22,18 +46,15 @@ Se convierte la variable `FECHA` al tipo `Date`.
 covid$FECHA <- as.Date(covid$FECHA, format = "%d/%m/%Y")
 ```
 
-## Opciones generales
-Se utiliza notación científica solo si los números tienen más de siete dígitos.
+## Salidas
 
-```{r opciones-generales}
-options(scipen = 7)
-```
+### Gráficos
 
-## Cantidad de casos a través del tiempo
+#### Casos acumulados
 
-### Casos positivos
+##### Positivos
 
-```{r relacion-fecha-positivos}
+```{r positivos-acumulados}
 # Gráfico de líneas
 plot(
   covid$FECHA,
@@ -41,7 +62,7 @@ plot(
   type = "l",
   xaxt = "n",
   yaxt = "n",
-  main = "Casos positivos de COVID en Costa Rica",
+  main = "Casos positivos acumulados de COVID en Costa Rica",
   xlab = "Fecha",
   ylab = "Casos positivos"
 )
@@ -58,8 +79,159 @@ axis(
   side = 2,
   covid$positivos,
   labels = TRUE,  
-  at = seq(0, 1000000, by = 100000),
+  at = seq(0, 1000000, by = 200000),
   cex.axis = .7
 )
 ```
 
+##### Fallecidos
+
+```{r fallecidos-acumulados}
+# Gráfico de líneas
+plot(
+  covid$FECHA,
+  covid$fallecidos,
+  type = "l",
+  xaxt = "n",
+  yaxt = "n",
+  main = "Casos fallecidos acumulados de COVID en Costa Rica",
+  xlab = "Fecha",
+  ylab = "Casos fallecidos"
+)
+
+# Formato del eje X
+axis(side = 1,
+     covid$FECHA,
+     tick = FALSE,
+     format(covid$FECHA, "%m-%y"),
+     cex.axis = .7)
+
+# Formato del eje Y
+axis(
+  side = 2,
+  covid$fallecidos,
+  labels = TRUE,  
+  at = seq(0, 10000, by = 2000),
+  cex.axis = .7
+)
+```
+
+##### Otros
+En este gráfico se muestran los casos acumulados positivos, activos, recuperados y fallecidos.
+
+```{r positivos-activos-recuperados-fallecidos-acumulados}
+# Gráfico de líneas de casos activos
+plot(
+  covid$FECHA,
+  covid$positivos,
+  type = "l",
+  xaxt = "n",
+  yaxt = "n",
+  main = "Casos acumulados de COVID en Costa Rica",
+  xlab = "Fecha",
+  ylab = "Casos",
+  col = "blue"
+)
+
+# Casos activos
+lines(covid$FECHA, covid$activos, col="red")
+
+# Casos recuperados
+lines(covid$FECHA, covid$RECUPERADOS, col="green")
+
+# Casos fallecidos
+lines(covid$FECHA, covid$fallecidos, col="black")
+
+# Leyenda
+legend(
+  x = "topleft",
+  inset = 0.03,
+  legend = c("Positivos", "Activos", "Recuperados", "Fallecidos"),
+  col = c("blue", "red", "green", "black"),
+  lty = 1,
+  cex = 0.7)
+
+# Formato del eje X
+axis(side = 1,
+     covid$FECHA,
+     tick = FALSE,
+     format(covid$FECHA, "%m-%y"),
+     cex.axis = .7)
+
+# Formato del eje Y
+axis(
+  side = 2,
+  covid$positivos,
+  labels = TRUE,  
+  at = seq(0, 1000000, by = 200000),
+  cex.axis = .7
+)
+```
+
+
+#### Casos diarios
+
+##### Positivos
+
+```{r positivos-diarios}
+# Gráfico de barras
+barplot(
+  height=covid$nue_posi,
+  names.arg=format(covid$FECHA, "%Y"),
+  ann = FALSE, 
+  bty = "n", 
+  tck = 0, 
+  xaxt = "n",
+  space = 1,
+  main="Casos positivos por día",
+  xlab = "Fecha",
+  ylab = "Casos positivos",
+  col = "blue"
+)
+
+# Fechas minima y máxima
+x_min <- min(covid$FECHA)
+x_max <- max(covid$FECHA)
+
+# Formato del eje X
+axis(
+  side = 1,
+  at = match(seq(as.Date(x_min), x_max, "years"), covid$FECHA) * (1 + 1),
+  labels = format(seq(as.Date(x_min), x_max, "years"), "%Y"),
+  lwd = 0)
+```
+
+##### Fallecidos
+
+```{r fallecidos-diarios}
+# Gráfico de barras
+barplot(
+  height=covid$nue_falleci,
+  names.arg=format(covid$FECHA, "%Y"),
+  ann = FALSE, 
+  bty = "n", 
+  tck = 0, 
+  xaxt = "n",
+  space = 1,
+  main="Casos fallecidos por día",
+  xlab = "Fecha",
+  ylab = "Casos fallecidos",
+  col = "black"
+)
+
+# Fechas minima y máxima
+x_min <- min(covid$FECHA)
+x_max <- max(covid$FECHA)
+
+# Formato del eje X
+axis(
+  side = 1,
+  at = match(seq(as.Date(x_min), x_max, "years"), covid$FECHA) * (1 + 1),
+  labels = format(seq(as.Date(x_min), x_max, "years"), "%Y"),
+  lwd = 0)
+```
+
+## Ejercicios
+1. Genere un gráfico de barras que muestre para cada día la cantidad de casos hospitalizados (de cualquier tipo).
+2. Genere un gráfico de líneas que muestre para cada día la cantidad de casos hospitalizados en salón y la cantidad de casos hospitalizados en unidad de cuidados intensivos (UCI).
+3. Genere un gráfico de líneas que muestre para cada día la cantidad acumulada de casos activos de menores, adultos y adultos mayores.
